@@ -1,71 +1,103 @@
-# Getting Started with Create React App
+# 💲 Price Checker for Commerce Companies using Contifico
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A mini React.js-based application that enables **commerce businesses** to check and compare product prices directly from **Contifico (Siigo)**, an accounting and billing platform used widely in Latin America.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Tech Stack
 
-### `npm start`
+- **Frontend:** React.js
+- **State Management:** Redux Toolkit
+- **Language:** JavaScript
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🧩 Overview
 
-### `npm test`
+This application helps retail and commerce companies easily consult product pricing through Contifico's official API using their private **API_KEY**.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- 📦 Fetches product data from Contifico.
+- 🔍 Allows real-time price checks.
+- ⚡ Streamlined for local development and future production deployment.
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🛡️ API Key Management
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Contifico provides an `API_KEY` upon contract activation. To keep your API_KEY secure:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### ✅ Development
+You can run the project locally using a proxy:
 
-### `npm run eject`
+1. Place the key in a `.env` file:
+    ```bash
+    REACT_APP_CONTIFICO_API_KEY=your_api_key_here
+    ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. `setupProxy.js` in the root directory is already pointing to the Contifico API URL.
+3. Start the app:
+    ```javascript
+    app.use(
+        '/sistema/api',
+        createProxyMiddleware({
+            target: 'https://api.contifico.com',
+            changeOrigin: true,
+            onProxyReq: (proxyReq, req) => {
+                proxyReq.setHeader('Authorization', process.env.REACT_APP_CONTIFICO_API_KEY);
+            }
+        })
+   );
+    ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 🔐 Production
+> **IMPORTANT:** In production, you must use a **backend server** to handle API requests securely.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+React does not allow secure storage of private keys in the frontend build. Any key embedded in a public build can be exposed, leading to **security breaches**.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+You’ll need a backend proxy (e.g., Node.js, Express) to:
+- Authenticate requests.
+- Attach the API_KEY securely.
+- Forward responses to the frontend.
 
-## Learn More
+### Example Node.js Proxy
+```javascript
+const contificoProxy = createProxyMiddleware({
+    target: 'https://api.contifico.com',
+    changeOrigin: true,
+    pathFilter: ['/sistema/api', '/contifico/api'],
+    secure: true,
+    pathRewrite: (path, req) => {
+        // Rewrite /contifico/api/... to /sistema/api/... and force trailing slash
+        const rewritten = path.replace(/^\/contifico\/api/, '/sistema/api');
+        return rewritten.endsWith('/') ? rewritten : rewritten.replace(/(\?.*)?$/, '/$1');
+    },
+    logger: console,
+    on: {
+        error: (error) => {
+            console.error('error: ' + error);
+        },
+        proxyReq: (proxyReq, req) => {
+            proxyReq.setHeader(
+                process.env.CONTIFICO_API_KEY_NAME,
+                process.env.CONTIFICO_API_KEY_VALUE
+            );
+            fixRequestBody(proxyReq, req);
+        },
+        proxyRes: (proxyRes, req, res) => {
+            if (proxyRes.statusCode === 301 || proxyRes.statusCode === 302) {
+                const redirectUrl = proxyRes.headers.location;
+                console.warn(`[Proxy Warning] Got redirected to ${redirectUrl}, maybe use 'secure: true' and 'https' target`);
+            }
+        },
+    },
+});
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## 🧪 Local Development
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# pricechecker
+1. Clone the repo:
+```bash
+git clone https://github.com/PedrojOrtiz/pricechecker.git
